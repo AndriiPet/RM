@@ -1,0 +1,49 @@
+version: '3.8'
+
+services:
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    ports:
+      - '${APP_HOST_PORT}:${APP_CONTAINER_PORT}'
+    depends_on:
+      - db
+    environment:
+      DATABASE_URL: postgres://${DB_USERNAME}:${DB_PASSWORD}@db:${DB_PORT}/${DB_NAME}
+      TZ: ${TZ}
+    command: >
+      sh -c "npm run migration:generate || true; npm run migration:run || true; npm run start"
+    networks:
+      - mtf-backend
+
+  db:
+    image: postgres:16
+    ports:
+      - '${DB_HOST_PORT}:${DB_CONTAINER_PORT}'
+    environment:
+      POSTGRES_DB: ${DB_NAME}
+      POSTGRES_USER: ${DB_USERNAME}
+      POSTGRES_PASSWORD: ${DB_PASSWORD}
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    networks:
+      - mtf-backend
+
+  pgadmin:
+    image: dpage/pgadmin4
+    ports:
+      - '${PGADMIN_HOST_PORT}:${PGADMIN_CONTAINER_PORT}'
+    environment:
+      PGADMIN_DEFAULT_EMAIL: ${PGADMIN_DEFAULT_EMAIL}
+      PGADMIN_DEFAULT_PASSWORD: ${PGADMIN_DEFAULT_PASSWORD}
+    depends_on:
+      - db
+    networks:
+      - mtf-backend
+
+volumes:
+  pgdata:
+
+networks:
+  mtf-backend:
